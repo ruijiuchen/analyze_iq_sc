@@ -1,0 +1,15 @@
+default_path_synced_files_iq = "/lustre/astrum/rchen/OnlineDataAnalysisSystem/data/iq/IQ_2021-05-10_00-14-45"
+default_path_analyzed_files_iq = "/lustre/astrum/rchen/OnlineDataAnalysisSystem/data/iq/IQ_2021-05-10_00-14-45"
+default_path_synced_files_sc = "/lustre/astrum/rchen/OnlineDataAnalysisSystem/data/sc/SC_2021-05-10_00-14-45"
+default_path_analyzed_files_sc = "/lustre/astrum/rchen/OnlineDataAnalysisSystem/data/sc/SC_2021-05-10_00-14-45"
+num_threads = 20
+FramesStep = 1
+WeightType = 0
+PlotOption = 0
+FramesPerPlot = 512
+FFTFreqLow = -1910
+FFTFreqSpan = 30
+FFTFreqBin = 1
+FFTNrOfFrames = 4096
+FFTFrameBin = 1
+WorkMode = 1

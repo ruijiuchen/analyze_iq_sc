@@ -1,0 +1,15 @@
+default_path_synced_files_iq = "*"
+default_path_analyzed_files_iq = "*"
+default_path_synced_files_sc = "*"
+default_path_analyzed_files_sc = "0"
+num_threads = 20
+FramesStep = 1
+WeightType = 0
+PlotOption = 0
+FramesPerPlot = 512
+FFTFreqLow = -1910
+FFTFreqSpan = 30
+FFTFreqBin = 1
+FFTNrOfFrames = 4096
+FFTFrameBin = 1
+WorkMode = 1

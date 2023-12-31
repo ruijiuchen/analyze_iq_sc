@@ -1,0 +1,2 @@
+[console_scripts]
+Analyze_iq_sc = Analyze_iq_sc.__main__:main
