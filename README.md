@@ -9,7 +9,7 @@ This command will download the source code to your local machine.
 2. Install Dependencies:
 Navigate to the downloaded code directory:
 
-	 cd Analyze_iq_sc
+	    cd Analyze_iq_sc
 	 
 Install the dependencies listed in the "requirements.txt" file using the following command:
 
