@@ -148,8 +148,8 @@ def analyze_files_worker_iq(default_path_synced_files_iq,default_path_analyzed_f
         #    f.write(f"{default_path_synced_files_iq}\n")
         #    f.write(f"{default_path_analyzed_files_iq}\n")
         if default_path_synced_files_iq:
-            update_file_list(file_listbox_iq,default_path_analyzed_files_iq,"analyzed_files_iq.txt",".iq.tdms")
             a = default_path_synced_files_iq + "/synced_files_iq.txt"
+            update_file_list(file_listbox_iq,default_path_analyzed_files_iq,a,".iq.tdms")
             #a = "synced_files_iq.txt"
             files0 = get_files(a)
             synced_files = filter_files(files0,".iq.tdms")
@@ -190,9 +190,9 @@ def analyze_files_worker_sc(default_path_synced_files_sc,default_path_analyzed_f
         
         if default_path_synced_files_sc:
             
-            update_file_list(file_listbox_sc,default_path_analyzed_files_sc,"analyzed_files_sc.txt",".sc.tdms")# Update the file list with the new directory
-
             a = default_path_synced_files_sc + "/synced_files_sc.txt"
+            update_file_list(file_listbox_sc,default_path_analyzed_files_sc,a,".sc.tdms")# Update the file list with the new directory
+
             #a =  "synced_files_sc.txt"
             files0 =get_files(a)
             synced_files = filter_files(files0,".sc.tdms")
@@ -210,12 +210,9 @@ def analyze_files_worker_sc(default_path_synced_files_sc,default_path_analyzed_f
                     #command = f"ls {default_path_synced_files_sc}/{file}"
                     try:
                         # Update the listbox item color
-                        #index = file_listbox_sc.get(0, tk.END).index(file)
-                        #file_listbox_sc.itemconfig(index, {'bg': 'yellow'})
                         
                         set_listbox_iterm_color(file_listbox_sc, file, "yellow")
-
-                        #time.sleep(3)                            
+                        #print("chenrj ... subprocess.run(command,")
                         subprocess.run(command, shell=True, check=True)
                         
                         end_time = time.time()  # Record the end time
@@ -225,16 +222,14 @@ def analyze_files_worker_sc(default_path_synced_files_sc,default_path_analyzed_f
                         #index = file_listbox_sc.get(0, tk.END).index(file)
                         #file_listbox_sc.itemconfig(index, {'bg': 'green'})
                         set_listbox_iterm_color(file_listbox_sc, file, "green")
-                         
+                        
                         adjust_scroll_position(file, synced_files, file_listbox_sc)
-                        file_root = file+".root"  
+                        file_root = file+".root"
+                        #print("chenrj ... add_file")
                         add_file("analyzed_files_sc.txt",default_path_synced_files_sc, file, elapsed_time,default_path_analyzed_files_sc, file_root)
                         
                     except subprocess.CalledProcessError:
                         print(f"Analyze file failed for: {file}")
-                        # Update the listbox item color
-                        #index = file_listbox_sc.get(0, tk.END).index(file)
-                        #file_listbox_sc.itemconfig(index, {'bg': 'red'})
                         set_listbox_iterm_color(file_listbox_sc, file, "red")
             time.sleep(1)
 
@@ -367,20 +362,27 @@ def start_online_server_worker(should_stop_online_server):
                 try:
                         print("start_online_server_worker") 
                         subprocess.run(command, shell=True, check=True)
+                        
                 except subprocess.CalledProcessError:
                         print("CSR_Online_Server stops running.")
 
-        
-
-def start_online_server(start_button_online_server,stop_button_online_server, should_stop_online_server):
+def start_online_server(start_button_online_server,stop_button_online_server, should_stop_online_server, update_button_online_server, should_stop_update_online_server):
     print(" start_online_server")
     should_stop_online_server[0] = False
     start_button_online_server.config(state="disabled")  # Disable the start button during syncing
     stop_button_online_server.config(state=tk.NORMAL) # Enable the stop button later when needed
+
+    # Remove CSR_Online_Server_status.txt if it exists
+    try:
+            os.remove("CSR_Online_Server_status.txt")
+    except FileNotFoundError:
+            pass  # Ignore if the file doesn't exist
     
     thread_start_online_server = threading.Thread(target=start_online_server_worker,args=(should_stop_online_server,))
     thread_start_online_server.start()
-    
+    should_stop_update_online_server[0] = True
+    update_online_server(update_button_online_server,stop_button_online_server, should_stop_update_online_server)    
+                        
 def update_online_server_worker(should_stop_update_online_server):
     while not should_stop_update_online_server[0]:
         print("update_online_server_worker")
@@ -396,16 +398,27 @@ def update_online_server_worker(should_stop_update_online_server):
                     print(f"Sent signal 10 to online_server (PID {online_server_pid})")
             except ProcessLookupError:
                     print("Process not found")
-        time.sleep(5)  # Wait for 5 seconds after each operation
+        time.sleep(10)  # Wait for 60 seconds after each operation
         
 def update_online_server(update_button_online_server,stop_button_online_server, should_stop_update_online_server):
-    print(" update_online_server")
-    should_stop_update_online_server[0] = False
-    update_button_online_server.config(state="disabled")  # Disable the start button during syncing
-    #stop_button_online_server.config(state=tk.NORMAL) # Enable the stop button later when needed
+        while should_stop_update_online_server[0]:
+                try:
+                        with open("CSR_Online_Server_status.txt", "r") as file:
+                                content = file.read().strip()
+                                
+                        # Check if the content is not empty
+                        if content and "Return value: 1" in content:
+                                should_stop_update_online_server[0] = False
+                                update_button_online_server.config(state="disabled")  # Disable the start button during syncing
+                                thread_update_online_server = threading.Thread(target=update_online_server_worker, args=(should_stop_update_online_server,))
+                                thread_update_online_server.start()
+                                break  # Exit the loop if actions are performed
+                        
+                except Exception as e:
+                        print(f"Online server is not ready. Please wait.")
+                        
+                time.sleep(1)
     
-    thread_update_online_server = threading.Thread(target=update_online_server_worker,args=(should_stop_update_online_server,))
-    thread_update_online_server.start()
     
 def stop_online_server(start_button_online_server,update_button_online_server,stop_button_online_server, should_stop_online_server,should_stop_update_online_server):
         should_stop_online_server[0] = True
@@ -565,7 +578,22 @@ def load_arguments(config_file_path):
                 with open("parameters_default.toml", 'r') as config_file:
                         config = toml.load(config_file)
         return config
+
+def has_display():
+        try:
+                # Try to get the DISPLAY environment variable
+                display = os.environ['DISPLAY']
                 
+                print("#################################################################")
+                print("#####Video output display detected. display", display," #####")
+                print("#####X server Reminder:", "Please ensure that X server is running before executing the script.#####")
+                print("#################################################################\n\n")
+                return True
+        except KeyError:
+                # If DISPLAY environment variable is not set, there might not be a graphical display
+                return False
+        
+            
 ######################################################################
 def main():
         
@@ -574,7 +602,13 @@ def main():
                 sys.exit(1)
                 
         config_file_path = sys.argv[1]
-        
+        # Check if there is a display
+        if not has_display():
+                print("No video output display detected.")
+                # You can add appropriate handling here, such as switching to a non-graphical mode or other logic
+                sys.exit(1)
+                
+                
         # Create the main window
         root = tk.Tk()
         root.title("Analyze data.")
@@ -707,20 +741,20 @@ def main():
         
         stop_button.grid(row=0, column=8, padx=5, pady=10, sticky="w")  # Left-aligned
     
-        start_button_online_server = tk.Button(root, text="Start online server", command=lambda:start_online_server(start_button_online_server,stop_button_online_server,should_stop_online_server))
+        start_button_online_server = tk.Button(root, text="Start online server", command=lambda:start_online_server(start_button_online_server,stop_button_online_server,should_stop_online_server, update_button_online_server,should_stop_update_online_server))
         start_button_online_server.grid(row=1, column=7, padx=5, pady=10, sticky="w")  # Left-aligned
         
-        update_button_online_server = tk.Button(root, text="Update online server", command=lambda:update_online_server(update_button_online_server,stop_button_online_server,should_stop_update_online_server))
+        update_button_online_server = tk.Button(root, text="Update online server(60)", command=lambda:update_online_server(update_button_online_server,stop_button_online_server,should_stop_update_online_server))
         update_button_online_server.grid(row=1, column=8, padx=5, pady=10, sticky="w")  # Left-aligned
-        
+               
         stop_button_online_server = tk.Button(root, text="Stop online server", command=lambda:stop_online_server(start_button_online_server,update_button_online_server,stop_button_online_server,should_stop_online_server,should_stop_update_online_server))
         stop_button_online_server.grid(row=1, column=9, padx=5, pady=10, sticky="w")  # Left-aligned
         
         start_button_roody = tk.Button(root, text="Start roody", command=lambda:start_roody(start_button_roody,stop_button_roody,should_stop_roody))
         start_button_roody.grid(row=2, column=7, padx=5, pady=10, sticky="w")  # Left-aligned
-        
+
         stop_button_roody = tk.Button(root, text="Stop roody", command=lambda:stop_roody(start_button_roody,stop_button_roody,should_stop_roody))
-        stop_button_roody.grid(row=2, column=8, padx=5, pady=10, sticky="w")  # Left-aligned
+        stop_button_roody.grid(row=2, column=9, padx=5, pady=10, sticky="w")  # Left-aligned
     
         ## Create the "Reanalyze" button iq
         reanalyze_button_iq = tk.Button(root, text="Re-analyze(IQ)", command=lambda:reanalyze_sync_iq(file_listbox_iq,default_path_synced_files_iq,file_listbox_sc,default_path_synced_files_sc))
