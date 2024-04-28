@@ -450,7 +450,7 @@ def stop_analyze(folder_entry_dic, file_listbox_dic, button_dic, should_stop_ana
     stop_analyze_worker_thread = threading.Thread(target=stop_analyze_worker, args=(folder_entry_dic, file_listbox_dic, button_dic, should_stop_analyze, unanalyzed_files_iq, thread_list_iq))
     stop_analyze_worker_thread.start()
          
-def start_online_server_worker(should_stop_online_server, path_to_analyzed_files_iq, path_to_analyzed_files_sc, default_path_injection_files, frameID_offset, frameID_range, range_sc, nx_sc, range_iq, nx_iq):
+def start_online_server_worker(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, path_to_analyzed_files_iq, path_to_analyzed_files_sc, default_path_injection_files, frameID_offset, frameID_range, range_sc, nx_sc, range_iq, nx_iq):
         time.sleep(1)
         if not should_stop_online_server[0]:
                 command = f"killall -9 CSR_Online_Server"
@@ -469,7 +469,7 @@ def start_online_server_worker(should_stop_online_server, path_to_analyzed_files
                         "../CSR_Online_Server/CSR_Online_Server "
                         f"--path_to_analyzed_files_sc='{path_to_analyzed_files_sc}' "
                         f"--path_to_analyzed_files_iq='{path_to_analyzed_files_iq}' "
-                        f"--default_path_injection_files='{default_path_injection_files}' "
+                        f"--directory_to_injection_data='{default_path_injection_files}' "
                         f"--frameID_offset={frameID_offset} "
                         f"--frameID_range={frameID_range} "
                         f"--range_sc={range_sc} "
@@ -479,7 +479,6 @@ def start_online_server_worker(should_stop_online_server, path_to_analyzed_files
                 )
                 print(" command : ",command)
                 try:
-                        #print("start_online_server_worker") 
                         subprocess.run(command, shell=True, check=True)
                         
                 except subprocess.CalledProcessError:
@@ -557,8 +556,21 @@ def replace_directory_name_if_prefix_found(original_path, new_dir_name):
         new_path = '/'.join(updated_parts)
         return new_path
                                                                         
-def start_online_server(start_button_online_server,stop_button_online_server, should_stop_online_server, update_button_online_server, should_stop_update_online_server,folder_entry_analyzed_files_iq,folder_entry_analyzed_files_sc,path_to_analyzed_files_iq,path_to_analyzed_files_sc,default_path_injection_files,frameID_offset,frameID_range,range_sc,nx_sc,range_iq,nx_iq):
-    #print(" start_online_server")
+def start_online_server(folder_entry_dic, file_listbox_dic, button_dic,  should_stop_online_server, should_stop_update_online_server,path_to_analyzed_files_iq,path_to_analyzed_files_sc):
+    start_button_online_server    = button_dic.get('start_button_online_server', None)
+    stop_button_online_server     = button_dic.get('stop_button_online_server', None)
+    folder_entry_analyzed_files_iq= folder_entry_dic.get('analyzed_files_iq', None)
+    folder_entry_analyzed_files_sc= folder_entry_dic.get('analyzed_files_sc', None)
+    #path_to_analyzed_files_iq = folder_entry_dic.get('folder_entry_analyzed_files_iq', None).get()
+    #path_to_analyzed_files_sc = folder_entry_dic.get('folder_entry_analyzed_files_sc', None).get()
+    default_path_injection_files= folder_entry_dic.get('injection_files', None).get()
+    frameID_offset= folder_entry_dic.get('frameID_offset', None).get()
+    frameID_range = folder_entry_dic.get('frameID_range', None).get()
+    range_sc      = folder_entry_dic.get('range_sc', None).get()
+    nx_sc         = folder_entry_dic.get('nx_sc', None).get()
+    range_iq      = folder_entry_dic.get('range_iq', None).get()
+    nx_iq         = folder_entry_dic.get('nx_iq', None).get()
+    
     should_stop_online_server[0] = False
     start_button_online_server.config(state="disabled")  # Disable the start button during syncing
     stop_button_online_server.config(state=tk.NORMAL) # Enable the stop button later when needed
@@ -579,15 +591,15 @@ def start_online_server(start_button_online_server,stop_button_online_server, sh
     path_to_analyzed_files_sc   = replace_directory_name_if_prefix_found(path_to_analyzed_files_sc,   new_sc_dir_name)
     default_path_injection_files = replace_directory_name_if_prefix_found(default_path_injection_files, new_iq_dir_name)
     
-    thread_start_online_server = threading.Thread(target=start_online_server_worker,args=(should_stop_online_server,path_to_analyzed_files_iq, path_to_analyzed_files_sc, default_path_injection_files,frameID_offset, frameID_range, range_sc, nx_sc, range_iq, nx_iq))
+    thread_start_online_server = threading.Thread(target=start_online_server_worker,args=(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server,path_to_analyzed_files_iq, path_to_analyzed_files_sc, default_path_injection_files,frameID_offset, frameID_range, range_sc, nx_sc, range_iq, nx_iq))
     thread_start_online_server.start()
     
-    thread_start_generate_full_spectrum = threading.Thread(target=start_generate_full_spectrum_worker,args=(should_stop_online_server, default_path_injection_files, frameID_offset, frameID_range))
-    thread_start_generate_full_spectrum.start()
+    #thread_start_generate_full_spectrum = threading.Thread(target=start_generate_full_spectrum_worker,args=(should_stop_online_server, default_path_injection_files, frameID_offset, frameID_range))
+    #thread_start_generate_full_spectrum.start()
     
     
     should_stop_update_online_server[0] = True
-    update_online_server(update_button_online_server,stop_button_online_server, should_stop_update_online_server)    
+    update_online_server(stop_button_online_server, should_stop_update_online_server)    
                         
 def update_online_server_worker(should_stop_update_online_server):
     while not should_stop_update_online_server[0]:
@@ -606,7 +618,7 @@ def update_online_server_worker(should_stop_update_online_server):
                     print("Process not found")
         time.sleep(10)  # Wait for 60 seconds after each operation
         
-def update_online_server(update_button_online_server,stop_button_online_server, should_stop_update_online_server):
+def update_online_server(stop_button_online_server, should_stop_update_online_server):
         while should_stop_update_online_server[0]:
                 try:
                         with open("CSR_Online_Server_status.txt", "r") as file:
@@ -615,7 +627,6 @@ def update_online_server(update_button_online_server,stop_button_online_server, 
                         # Check if the content is not empty
                         if content and "Return value: 1" in content:
                                 should_stop_update_online_server[0] = False
-                                update_button_online_server.config(state="disabled")  # Disable the start button during syncing
                                 thread_update_online_server = threading.Thread(target=update_online_server_worker, args=(should_stop_update_online_server,))
                                 thread_update_online_server.start()
                                 break  # Exit the loop if actions are performed
@@ -626,13 +637,14 @@ def update_online_server(update_button_online_server,stop_button_online_server, 
                 time.sleep(10)
     
     
-def stop_online_server(start_button_online_server,update_button_online_server,stop_button_online_server, should_stop_online_server,should_stop_update_online_server):
-        should_stop_online_server[0] = True
+def stop_online_server(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, should_stop_update_online_server):
+        start_button_online_server    = button_dic.get('start_button_online_server', None)
+        stop_button_online_server     = button_dic.get('stop_button_online_server', None)
+        should_stop_online_server[0]        = True
         should_stop_update_online_server[0] = True
         #print(" stop_online_server")
         if should_stop_online_server[0]:
                 start_button_online_server.config(state=tk.NORMAL)  # Disable the start button during syncing
-                update_button_online_server.config(state=tk.NORMAL)  # Disable the start button during syncing
                 stop_button_online_server.config(state="disabled") # Enable the stop button later when needed
         
                 command = f"killall -9 CSR_Online_Server"
@@ -934,7 +946,7 @@ def main():
         nx_sc =config["nx_sc"]
         range_iq =config["range_iq"]
         nx_iq =config["nx_iq"]
-        # =config[""]
+
         # Create a menu bar
         menubar = tk.Menu(root)
         root.config(menu=menubar)
@@ -996,9 +1008,7 @@ def main():
         update_file_list(file_listbox_synced_files_sc,default_path_synced_files_sc,default_path_analyzed_files_sc,"analyzed_files_sc.txt",".sc.tdms")  # Update the file list in file_listbox_synced_files_iq with default path
         file_listbox_analyzed_files_sc,file_listbox_analyzed_files_sc_scrollbar = create_listbox_with_scrollbar(root, width=20, height=25, grid_row=5, grid_column=3)
         file_listbox_injection_files,file_listbox_injection_files_scrollbar = create_listbox_with_scrollbar(root, width=20, height=25, grid_row=5, grid_column=4)
-
-        #thread = threading.Thread(target=update_file_list_periodically, args=(file_listbox_synced_files_iq, default_path_synced_files_iq, "analyzed_files_iq.txt", ".iq.tdms",file_listbox_synced_files_sc, default_path_synced_files_sc, "analyzed_files_sc.txt", ".sc.tdms"))        
-        #thread.start()
+        
         ## Create a "Browse" button for folder selection
         browse_button_synced_files_iq = tk.Button(root, text="Browse", command=lambda: browse_folder_and_update_list_filebox(folder_entry_synced_files_iq,default_path_synced_files_iq,default_path_analyzed_files_iq,file_listbox_synced_files_iq,"analyzed_files_iq.txt",".iq.tdms"))
         browse_button_synced_files_iq.grid(row=0, column=5, padx=10, pady=10, sticky="w")  # Left-aligned
@@ -1034,13 +1044,10 @@ def main():
         stop_button = tk.Button(root, text="Stop analysis", command=lambda:stop_analyze(folder_entry_dic, file_listbox_dic, button_dic, should_stop_analyze, unanalyzed_files_iq, thread_list_iq))
         stop_button.grid(row=1, column=8, padx=5, pady=10, sticky="w")  # Left-aligned
     
-        start_button_online_server = tk.Button(root, text="Start online server", command=lambda:start_online_server(start_button_online_server,stop_button_online_server,should_stop_online_server, update_button_online_server,should_stop_update_online_server,folder_entry_analyzed_files_iq,folder_entry_analyzed_files_sc,path_to_analyzed_files_iq,path_to_analyzed_files_sc,default_path_injection_files,frameID_offset,frameID_range,range_sc,nx_sc,range_iq,nx_iq))
+        start_button_online_server = tk.Button(root, text="Start online server", command=lambda:start_online_server(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, should_stop_update_online_server, path_to_analyzed_files_iq, path_to_analyzed_files_sc))
         start_button_online_server.grid(row=1, column=9, padx=5, pady=10, sticky="w")  # Left-aligned
-        
-        #update_button_online_server = tk.Button(root, text="Update online server(60)", command=lambda:update_online_server(update_button_online_server,stop_button_online_server,should_stop_update_online_server))
-        #update_button_online_server.grid(row=1, column=8, padx=5, pady=10, sticky="w")  # Left-aligned
-               
-        stop_button_online_server = tk.Button(root, text="Stop online server", command=lambda:stop_online_server(start_button_online_server,update_button_online_server,stop_button_online_server,should_stop_online_server,should_stop_update_online_server))
+                       
+        stop_button_online_server = tk.Button(root, text="Stop online server", command=lambda:stop_online_server(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, should_stop_update_online_server))
         stop_button_online_server.grid(row=1, column=10, padx=5, pady=10, sticky="w")  # Left-aligned
         
         start_button_roody = tk.Button(root, text="Start roody", command=lambda:start_roody(start_button_roody,stop_button_roody,should_stop_roody))
