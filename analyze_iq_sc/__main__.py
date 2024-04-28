@@ -241,26 +241,25 @@ def analyze_files_worker_iq(folder_entry_dic, file_listbox_dic, button_dic, shou
                 num_threads = int(folder_entry_dic.get("num_threads", "Default Value if not found").get())
                 print("num_threads ",num_threads)
                 if file_fullpath not in analyzed_files and file not in unanalyzed_files:
-                    
+                    print("chenrj ... unanalyzed_files ",unanalyzed_files)
                     while True and should_stop_analyze[0] ==False:
                         active_thread_number = 0
                         for thread in thread_list:
                             if thread.is_alive():
                                 active_thread_number=active_thread_number+1
-                        print(" active_thread_number is ",active_thread_number,". Wait for free CPU. file = ",file)
+                        #print(" active_thread_number is ",active_thread_number,". Wait for free CPU. file = ",file)
                         #print(" unanalyzed_files:",unanalyzed_files)
                         if active_thread_number<num_threads:
                             break
                         else:
                             time.sleep(1)
-                    print("chenrj file  ",file)
-                    unanalyzed_files.append(file)
-                    print("chenrj ... synced_files",synced_files)
-                    print("chenrj ... unanalyzed_files ",unanalyzed_files)
-                    thread = threading.Thread(target=thread_subprocess_iq,args=(file,file_listbox_synced_files_iq,should_stop_analyze,synced_files,folder_entry_dic))
-                    thread.start()
-                    time.sleep(1) 
-                    thread_list.append(thread)
+                            
+                    if should_stop_analyze[0] == False:
+                            unanalyzed_files.append(file)
+                            thread = threading.Thread(target=thread_subprocess_iq,args=(file,file_listbox_synced_files_iq,should_stop_analyze,synced_files,folder_entry_dic))
+                            thread.start()
+                            time.sleep(1) 
+                            thread_list.append(thread)
         time.sleep(1)
 
 def analyze_files_worker_sc(folder_entry_dic, file_listbox_dic, button_dic,should_stop_analyze):
@@ -407,7 +406,8 @@ def reanalyze_sync_sc(file_listbox_synced_files_iq,default_path_analyzed_files_i
 def stop_analyze_worker(folder_entry_dic, file_listbox_dic, button_dic, should_stop_analyze, unanalyzed_files_iq, thread_list_iq):
     stop_button = button_dic.get('stop_button', None)
     file_listbox_synced_files_iq = file_listbox_dic.get('synced_files_iq', None)
-    file_listbox_synced_files_sc = file_listbox_dic.get('synced_files_sc', None)   
+    file_listbox_synced_files_sc = file_listbox_dic.get('synced_files_sc', None)
+    default_bg_color = stop_button.cget('bg')
     while should_stop_analyze[0]: # keep the threading runing until should_stop_analyze[0] = True.
         yellow_files_iq = []  # # Used to store file names with yellow color
         for item_index in range(file_listbox_synced_files_iq.size()):
@@ -432,6 +432,7 @@ def stop_analyze_worker(folder_entry_dic, file_listbox_dic, button_dic, should_s
         else:
             # No yellow items, stop blinking
             time.sleep(1)
+            stop_button.config(bg=default_bg_color)
             for key, button in button_dic.items():
                     if key == "stop_button":
                             button.config(state="disabled")  # Dusable only the stop_button
