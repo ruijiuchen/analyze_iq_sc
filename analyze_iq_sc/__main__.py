@@ -33,19 +33,25 @@ def generated_file_offline_mode(default_path_synced_files_iq,  default_path_anal
         # Copy the file to the destination
         shutil.copy(source_file_sc, destination_sc)
          
-def list_files_in_directory(directory,end=".iq.tdms"):
-    #files0 = os.listdir(directory)
-    try:
-        files0 = os.listdir(directory)
-    except FileNotFoundError:
-        # If the directory doesn't exist, return an empty list
-        files0 = []
-    files=[]
-    for i in range(0, len(files0)):
-        if files0[i].endswith(end):  # Check if the file has the .tdms extension
-            files.append(files0[i])
-    sorted_files = sorted(files)  # Sort files by name
-    return sorted_files
+def list_files_in_directory(directory, extension="*"):
+        try:
+                # Attempt to read all files and directories within the specified directory
+                files0 = os.listdir(directory)
+        except FileNotFoundError:
+                # If the directory does not exist, return an empty list
+                return []
+        
+        # If the extension parameter is '*', return all files and directories.
+        # Otherwise, filter the list to include only files that end with the specified extension.
+        if extension == "*":
+                filtered_files = files0  # No filtering, return all items
+        else:
+                filtered_files = [file for file in files0 if file.endswith(extension)]
+                
+        # Sort the filtered list of files by their names
+        sorted_files = sorted(filtered_files)
+                
+        return sorted_files
 
 def replace_path_segment(default_path, selected_directory):
         # Extract the last part of the selected_directory, e.g., 'IQ_2021-05-09_23-56-42'
@@ -219,12 +225,15 @@ def analyze_files_worker_iq(folder_entry_dic, file_listbox_dic, button_dic, shou
     while not should_stop_analyze[0]: # keep the threading runing until should_stop_analyze[0] = True.
         default_path_synced_files_iq  = folder_entry_dic.get('synced_files_iq', None).get()
         default_path_analyzed_files_iq= folder_entry_dic.get('analyzed_files_iq', None).get()
+
         file_listbox_synced_files_iq  = file_listbox_dic.get('synced_files_iq', None)
-        file_listbox_synced_files_sc  = file_listbox_dic.get('synced_files_sc', None)   
+        file_listbox_analyzed_files_iq  = file_listbox_dic.get('analyzed_files_iq', None)
         start_button_analysis         = button_dic.get('start_button_analysis', None)
         if default_path_synced_files_iq:
             #print("chenrj ... ",a)
             update_file_list(file_listbox_synced_files_iq,default_path_synced_files_iq,default_path_analyzed_files_iq,"analyzed_files_iq.txt",".iq.tdms")
+            update_file_list(file_listbox_analyzed_files_iq,default_path_analyzed_files_iq,default_path_analyzed_files_iq,"analyzed_files_iq.txt",".bin_amp")  # Update the file list in file_listbox_analyzed_files_iq with default path
+
             #a = "synced_files_iq.txt"
             b = default_path_synced_files_iq + "/synced_files_iq.txt"
             files0 = get_files(b)
@@ -267,12 +276,15 @@ def analyze_files_worker_sc(folder_entry_dic, file_listbox_dic, button_dic,shoul
         default_path_synced_files_sc  = folder_entry_dic.get('synced_files_sc', None).get()
         default_path_analyzed_files_sc= folder_entry_dic.get('analyzed_files_sc', None).get()
                         
-        file_listbox_synced_files_iq = file_listbox_dic.get('synced_files_iq', None)
         file_listbox_synced_files_sc = file_listbox_dic.get('synced_files_sc', None)
+        file_listbox_analyzed_files_sc = file_listbox_dic.get('analyzed_files_sc', None)
+        
         start_button_analysis        = file_listbox_dic.get('start_button_analysis', None)
         if default_path_synced_files_sc:
             #print("chenrj ... default_path_synced_files_sc = ",default_path_synced_files_sc)
             update_file_list(file_listbox_synced_files_sc, default_path_synced_files_sc,default_path_analyzed_files_sc, "analyzed_files_sc.txt", ".sc.tdms")
+            update_file_list(file_listbox_analyzed_files_sc,default_path_analyzed_files_sc,default_path_analyzed_files_sc,"analyzed_files_sc.txt",".sc.tdms.root")  # Update the file list in file_listbox_analyzed_files_iq with default path
+
             # Update the file list with the new directory
             b = default_path_synced_files_sc + "/synced_files_sc.txt"
             #a =  "synced_files_sc.txt"
@@ -330,14 +342,19 @@ def analyze_data(folder_entry_dic, file_listbox_dic, button_dic, should_stop_ana
     default_path_analyzed_files_iq= folder_entry_dic.get('analyzed_files_iq', None).get()
     default_path_synced_files_sc  = folder_entry_dic.get('synced_files_sc', None).get()
     default_path_analyzed_files_sc= folder_entry_dic.get('analyzed_files_sc', None).get()
-    file_listbox_synced_files_iq = file_listbox_dic.get('synced_files_iq', None)
-    file_listbox_synced_files_sc = file_listbox_dic.get('synced_files_sc', None)   
-    file_listbox_synced_files_iq = file_listbox_dic.get('synced_files_iq', None)
-    
-    update_file_list(file_listbox_synced_files_iq,default_path_synced_files_iq, default_path_analyzed_files_iq, "analyzed_files_iq.txt",".iq.tdms")
+    default_path_injection_files  = folder_entry_dic.get('injection_files', None).get()
 
+    file_listbox_synced_files_iq  = file_listbox_dic.get('synced_files_iq', None)
+    file_listbox_synced_files_sc  = file_listbox_dic.get('synced_files_sc', None)   
+    file_listbox_analyzed_files_iq= file_listbox_dic.get('analyzed_files_iq', None)
+    file_listbox_analyzed_files_sc= file_listbox_dic.get('analyzed_files_sc', None)
+    file_listbox_injection_files  = file_listbox_dic.get('injection_files', None)
+    update_file_list(file_listbox_synced_files_iq,default_path_synced_files_iq, default_path_analyzed_files_iq, "analyzed_files_iq.txt",".iq.tdms")
     update_file_list(file_listbox_synced_files_sc, default_path_synced_files_sc, default_path_analyzed_files_sc,"analyzed_files_sc.txt", ".sc.tdms")# Update the file list with the new directory
-    
+    update_file_list(file_listbox_analyzed_files_iq,default_path_analyzed_files_iq,default_path_analyzed_files_iq,"analyzed_files_iq.txt",".iq.tdms.bin_amp")  # Update the file list in file_listbox_analyzed_files_iq with default path
+    update_file_list(file_listbox_analyzed_files_sc,default_path_analyzed_files_sc,default_path_analyzed_files_sc,"analyzed_files_sc.txt",".sc.tdms.root")  # Update the file list in file_listbox_analyzed_files_iq with default path
+    update_file_list(file_listbox_injection_files,default_path_injection_files,default_path_injection_files,"analyzed_files_iq.txt","*")  # Update the file list in file_listbox_injection_files with default path
+
     # Check and create directories if they do not exist
     if not os.path.exists(default_path_analyzed_files_iq):
         os.makedirs(default_path_analyzed_files_iq, exist_ok=True)
@@ -358,10 +375,12 @@ def analyze_data(folder_entry_dic, file_listbox_dic, button_dic, should_stop_ana
             if key == "stop_button":
                     button.config(state=tk.NORMAL)  # Enable only the stop_button
             else:
-                    button.config(state="disabled")  # Disable all other buttons
+                    if key == "browse_button_synced_files_iq" or key == "browse_button_analyzed_files_iq"  or key == "browse_button_synced_files_sc" or key == "browse_button_analyzed_files_sc":
+                            button.config(state="disabled")  # Disable all other buttons
                     
-    for entry_widget in folder_entry_dic.values():
-            entry_widget.config(state="disabled")
+    for key, entry_widget in folder_entry_dic.items():
+            if key == "synced_files_iq" or key == "analyzed_files_iq" or key == "synced_files_sc" or key == "analyzed_files_sc":
+                    entry_widget.config(state="disabled")
     # Run your analyze_data logic here
     print("Analyzing data...")
 
@@ -437,10 +456,14 @@ def stop_analyze_worker(folder_entry_dic, file_listbox_dic, button_dic, should_s
                     if key == "stop_button":
                             button.config(state="disabled")  # Dusable only the stop_button
                     else:
-                            button.config(state="normal")  # Enable all other buttons
-            for entry_widget in folder_entry_dic.values():
-                    entry_widget.config(state="normal")
-                            
+                            if key == "browse_button_synced_files_iq" or key == "browse_button_analyzed_files_iq"  or key == "browse_button_synced_files_sc" or key == "browse_button_analyzed_files_sc":
+                                    button.config(state="normal")  # Enable all other buttons
+            #for entry_widget in folder_entry_dic.values():
+            #        entry_widget.config(state="normal")
+            for key, entry_widget in folder_entry_dic.items():
+                    if key == "synced_files_iq" or key == "analyzed_files_iq" or key == "synced_files_sc" or key == "analyzed_files_sc":
+                            entry_widget.config(state="disabled")
+    
             break
     
 def stop_analyze(folder_entry_dic, file_listbox_dic, button_dic, should_stop_analyze, unanalyzed_files_iq, thread_list_iq):
@@ -594,8 +617,8 @@ def start_online_server(folder_entry_dic, file_listbox_dic, button_dic,  should_
     thread_start_online_server = threading.Thread(target=start_online_server_worker,args=(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server,path_to_analyzed_files_iq, path_to_analyzed_files_sc, default_path_injection_files,frameID_offset, frameID_range, range_sc, nx_sc, range_iq, nx_iq))
     thread_start_online_server.start()
     
-    #thread_start_generate_full_spectrum = threading.Thread(target=start_generate_full_spectrum_worker,args=(should_stop_online_server, default_path_injection_files, frameID_offset, frameID_range))
-    #thread_start_generate_full_spectrum.start()
+    thread_start_generate_full_spectrum = threading.Thread(target=start_generate_full_spectrum_worker,args=(should_stop_online_server, default_path_injection_files, frameID_offset, frameID_range))
+    thread_start_generate_full_spectrum.start()
     
     
     should_stop_update_online_server[0] = True
@@ -735,19 +758,12 @@ def update_file_list(file_listbox, default_path_synced_files,default_path_analyz
         #print("new_files ",new_files)
         for file in new_files:
                 file_listbox.insert(tk.END, file)
-                # If the file was originally in the list, retain its color
-                #if file in existing_colors:
-                #        index = file_listbox.get(0, tk.END).index(file)  # Get the newly inserted file index
-                #        set_listbox_item_color(file_listbox, file, existing_colors[file])
         
         # Mark files that have been analyzed
         a = default_path_analyzed_files + "/" + analyzed_files_name
         analyzed_files = get_files(a)
-        #print("analyzed_files_name = ",a)
-        #print("analyzed_files ",analyzed_files)
         for file in new_files:
                 file_fullpath = os.path.join(default_path_synced_files, file)
-                #print("file_fullpath ",file_fullpath)
                 if file_fullpath in analyzed_files:
                         set_listbox_iterm_color(file_listbox, file, "green")
                         
@@ -1001,33 +1017,41 @@ def main():
         folder_entry_injection_files.grid(row=4, column=1, columnspan=4,padx=10, pady=10, sticky="w")  # Left-aligned
         folder_entry_injection_files.insert(0, default_path_injection_files)  # Insert the default path
         
-        file_listbox_synced_files_iq,file_listbox_synced_files_iq_scrollbar = create_listbox_with_scrollbar(root, width=20, height=25, grid_row=5, grid_column=0)
-        update_file_list(file_listbox_synced_files_iq,default_path_synced_files_iq,default_path_analyzed_files_iq,"analyzed_files_iq.txt",".iq.tdms")  # Update the file list in file_listbox_synced_files_iq with default path
-        file_listbox_analyzed_files_iq,file_listbox_analyzed_files_iq_scrollbar = create_listbox_with_scrollbar(root, width=20, height=25, grid_row=5, grid_column=1)
-        file_listbox_synced_files_sc,file_listbox_synced_files_sc_scrollbar = create_listbox_with_scrollbar(root, width=20, height=25, grid_row=5, grid_column=2)
-        update_file_list(file_listbox_synced_files_sc,default_path_synced_files_sc,default_path_analyzed_files_sc,"analyzed_files_sc.txt",".sc.tdms")  # Update the file list in file_listbox_synced_files_iq with default path
-        file_listbox_analyzed_files_sc,file_listbox_analyzed_files_sc_scrollbar = create_listbox_with_scrollbar(root, width=20, height=25, grid_row=5, grid_column=3)
-        file_listbox_injection_files,file_listbox_injection_files_scrollbar = create_listbox_with_scrollbar(root, width=20, height=25, grid_row=5, grid_column=4)
+        file_listbox_synced_files_iq,file_listbox_synced_files_iq_scrollbar = create_listbox_with_scrollbar(root, width=15, height=25, grid_row=5, grid_column=0)
+
+        file_listbox_analyzed_files_iq,file_listbox_analyzed_files_iq_scrollbar = create_listbox_with_scrollbar(root, width=25, height=25, grid_row=5, grid_column=1)
         
+        file_listbox_synced_files_sc,file_listbox_synced_files_sc_scrollbar = create_listbox_with_scrollbar(root, width=15, height=25, grid_row=5, grid_column=2)
+
+        file_listbox_analyzed_files_sc,file_listbox_analyzed_files_sc_scrollbar = create_listbox_with_scrollbar(root, width=25, height=25, grid_row=5, grid_column=3)
+
+        file_listbox_injection_files,file_listbox_injection_files_scrollbar = create_listbox_with_scrollbar(root, width=35, height=25, grid_row=5, grid_column=4)
+        
+        update_file_list(file_listbox_synced_files_iq,default_path_synced_files_iq,default_path_analyzed_files_iq,"analyzed_files_iq.txt",".iq.tdms")  # Update the file list in file_listbox_synced_files_iq with default path
+        update_file_list(file_listbox_synced_files_sc,default_path_synced_files_sc,default_path_analyzed_files_sc,"analyzed_files_sc.txt",".sc.tdms")  # Update the file list in file_listbox_synced_files_iq with default path
+        update_file_list(file_listbox_analyzed_files_iq,default_path_analyzed_files_iq,default_path_analyzed_files_iq,"analyzed_files_iq.txt",".iq.tdms.bin_amp")  # Update the file list in file_listbox_analyzed_files_iq with default path
+        update_file_list(file_listbox_analyzed_files_sc,default_path_analyzed_files_sc,default_path_analyzed_files_sc,"analyzed_files_sc.txt",".sc.tdms.root")  # Update the file list in file_listbox_analyzed_files_iq with default path
+        update_file_list(file_listbox_injection_files,default_path_injection_files,default_path_injection_files,"analyzed_files_iq.txt",".root")  # Update the file list in file_listbox_injection_files with default path
+
         ## Create a "Browse" button for folder selection
         browse_button_synced_files_iq = tk.Button(root, text="Browse", command=lambda: browse_folder_and_update_list_filebox(folder_entry_synced_files_iq,default_path_synced_files_iq,default_path_analyzed_files_iq,file_listbox_synced_files_iq,"analyzed_files_iq.txt",".iq.tdms"))
-        browse_button_synced_files_iq.grid(row=0, column=5, padx=10, pady=10, sticky="w")  # Left-aligned
+        browse_button_synced_files_iq.grid(row=0, column=4, padx=100, pady=10, sticky="w")  # Left-aligned
         
         ## Create a "Browse" button for folder selection
         browse_button_analyzed_files_iq = tk.Button(root, text="Browse", command=lambda: browse_folder(folder_entry_analyzed_files_iq,default_path_analyzed_files_iq))
-        browse_button_analyzed_files_iq.grid(row=1, column=5, padx=10, pady=10, sticky="w")  # Left-aligned
+        browse_button_analyzed_files_iq.grid(row=1, column=4, padx=100, pady=10, sticky="w")  # Left-aligned
         
         # Create a "Browse" button for folder selection
         browse_button_synced_files_sc = tk.Button(root, text="Browse", command=lambda: browse_folder_and_update_list_filebox(folder_entry_synced_files_sc,default_path_synced_files_sc,default_path_analyzed_files_sc,file_listbox_synced_files_sc,"analyzed_files_sc.txt",".sc.tdms"))
-        browse_button_synced_files_sc.grid(row=2, column=5, padx=10, pady=10, sticky="w")  # Left-aligned
+        browse_button_synced_files_sc.grid(row=2, column=4, padx=100, pady=10, sticky="w")  # Left-aligned
     
         # Create a "Browse" button for folder selection
         browse_button_analyzed_files_sc = tk.Button(root, text="Browse", command=lambda: browse_folder(folder_entry_analyzed_files_sc,default_path_analyzed_files_sc))
-        browse_button_analyzed_files_sc.grid(row=3, column=5, padx=10, pady=10, sticky="w")  # Left-aligned
+        browse_button_analyzed_files_sc.grid(row=3, column=4, padx=100, pady=10, sticky="w")  # Left-aligned
 
         # Create a "Browse" button for folder selection
         browse_button_injection_files = tk.Button(root, text="Browse", command=lambda: browse_folder(folder_entry_injection_files,default_path_injection_files))
-        browse_button_injection_files.grid(row=4, column=5, padx=10, pady=10, sticky="w")  # Left-aligned
+        browse_button_injection_files.grid(row=4, column=4, padx=100, pady=10, sticky="w")  # Left-aligned
     
         
         ### Create the "Start" button
@@ -1038,23 +1062,23 @@ def main():
         
         start_button_analysis = ttk.Button(root, text="Start analysis", command=lambda:analyze_data(folder_entry_dic,file_listbox_dic, button_dic, should_stop_analyze, unanalyzed_files_iq,thread_list_iq))
         start_button_analysis.configure(style="TButton")
-        start_button_analysis.grid(row=1, column=7, padx=5, pady=10, sticky="w")
+        start_button_analysis.grid(row=0, column=7, padx=5, pady=10, sticky="w", columnspan=2)
                 
         ### Create the "Stop" button
         stop_button = tk.Button(root, text="Stop analysis", command=lambda:stop_analyze(folder_entry_dic, file_listbox_dic, button_dic, should_stop_analyze, unanalyzed_files_iq, thread_list_iq))
-        stop_button.grid(row=1, column=8, padx=5, pady=10, sticky="w")  # Left-aligned
+        stop_button.grid(row=1, column=7, padx=5, pady=10, sticky="w", columnspan=2)  # Left-aligned
     
         start_button_online_server = tk.Button(root, text="Start online server", command=lambda:start_online_server(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, should_stop_update_online_server, path_to_analyzed_files_iq, path_to_analyzed_files_sc))
-        start_button_online_server.grid(row=1, column=9, padx=5, pady=10, sticky="w")  # Left-aligned
+        start_button_online_server.grid(row=0, column=9, padx=5, pady=10, sticky="w", columnspan=2)  # Left-aligned
                        
         stop_button_online_server = tk.Button(root, text="Stop online server", command=lambda:stop_online_server(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, should_stop_update_online_server))
-        stop_button_online_server.grid(row=1, column=10, padx=5, pady=10, sticky="w")  # Left-aligned
+        stop_button_online_server.grid(row=1, column=9, padx=5, pady=10, sticky="w", columnspan=2)  # Left-aligned
         
         start_button_roody = tk.Button(root, text="Start roody", command=lambda:start_roody(start_button_roody,stop_button_roody,should_stop_roody))
-        start_button_roody.grid(row=2, column=9, padx=5, pady=10, sticky="w")  # Left-aligned
+        start_button_roody.grid(row=2, column=9, padx=5, pady=10, sticky="w", columnspan=2)  # Left-aligned
 
         stop_button_roody = tk.Button(root, text="Stop roody", command=lambda:stop_roody(start_button_roody,stop_button_roody,should_stop_roody))
-        stop_button_roody.grid(row=2, column=10, padx=5, pady=10, sticky="w")  # Left-aligned
+        stop_button_roody.grid(row=3, column=9, padx=5, pady=10, sticky="w")  # Left-aligned
     
         ## Create the "Reanalyze" button iq
         reanalyze_button_iq = tk.Button(root, text="Re-analyze(IQ)", command=lambda:reanalyze_sync_iq(file_listbox_synced_files_iq,default_path_synced_files_iq,file_listbox_synced_files_sc,default_path_synced_files_sc))
@@ -1064,24 +1088,24 @@ def main():
         reanalyze_button_sc = tk.Button(root, text="Re-analyze(SC)", command=lambda:reanalyze_sync_sc(file_listbox_synced_files_iq,default_path_synced_files_iq,file_listbox_synced_files_sc,default_path_synced_files_sc))
         reanalyze_button_sc.grid(row=14, column=2, padx=5, pady=10, sticky="w")  # Left-aligned
         
-        comment_label_num_threads,  folder_entry_num_threads  = create_folder_entry(root, num_threads,  "NUM_THREADS:",   3, 7)
-        comment_label_FramesStep,   folder_entry_FramesStep   = create_folder_entry(root, FramesStep,   "FramesStep:",    4, 7)
-        comment_label_WeightType,   folder_entry_WeightType   = create_folder_entry(root, WeightType,   "WeightType:",    5, 7)
-        comment_label_PlotOption,   folder_entry_PlotOption   = create_folder_entry(root, PlotOption,   "PlotOption:",    6, 7)
-        comment_label_FramesPerPlot,folder_entry_FramesPerPlot= create_folder_entry(root, FramesPerPlot,"FramesPerPlot:", 7, 7)
-        comment_label_FFTFreqLow,   folder_entry_FFTFreqLow   = create_folder_entry(root, FFTFreqLow,   "FFTFreqLow:",    8, 7)
-        comment_label_FFTFreqSpan,  folder_entry_FFTFreqSpan  = create_folder_entry(root, FFTFreqSpan,  "FFTFreqSpan:",   9, 7)
-        comment_label_FFTFreqBin,   folder_entry_FFTFreqBin   = create_folder_entry(root, FFTFreqBin,   "FFTFreqBin:",   10, 7)
-        comment_label_FFTNrOfFrames,folder_entry_FFTNrOfFrames= create_folder_entry(root, FFTNrOfFrames,"FFTNrOfFrames:",11, 7)
-        comment_label_FFTFrameBin,  folder_entry_FFTFrameBin  = create_folder_entry(root, FFTFrameBin,  "FFTFrameBin:",  12, 7)
-        comment_label_WorkMode,     folder_entry_WorkMode     = create_folder_entry(root, WorkMode,     "WorkMode:",     13, 7)
+        comment_label_num_threads,  folder_entry_num_threads  = create_folder_entry(root, num_threads,  "NUM_THREADS:",   4, 7)
+        comment_label_FramesStep,   folder_entry_FramesStep   = create_folder_entry(root, FramesStep,   "FramesStep:",    5, 7)
+        comment_label_WeightType,   folder_entry_WeightType   = create_folder_entry(root, WeightType,   "WeightType:",    6, 7)
+        comment_label_PlotOption,   folder_entry_PlotOption   = create_folder_entry(root, PlotOption,   "PlotOption:",    7, 7)
+        comment_label_FramesPerPlot,folder_entry_FramesPerPlot= create_folder_entry(root, FramesPerPlot,"FramesPerPlot:", 8, 7)
+        comment_label_FFTFreqLow,   folder_entry_FFTFreqLow   = create_folder_entry(root, FFTFreqLow,   "FFTFreqLow:",    9, 7)
+        comment_label_FFTFreqSpan,  folder_entry_FFTFreqSpan  = create_folder_entry(root, FFTFreqSpan,  "FFTFreqSpan:",  10, 7)
+        comment_label_FFTFreqBin,   folder_entry_FFTFreqBin   = create_folder_entry(root, FFTFreqBin,   "FFTFreqBin:",   11, 7)
+        comment_label_FFTNrOfFrames,folder_entry_FFTNrOfFrames= create_folder_entry(root, FFTNrOfFrames,"FFTNrOfFrames:",12, 7)
+        comment_label_FFTFrameBin,  folder_entry_FFTFrameBin  = create_folder_entry(root, FFTFrameBin,  "FFTFrameBin:",  13, 7)
+        comment_label_WorkMode,     folder_entry_WorkMode     = create_folder_entry(root, WorkMode,     "WorkMode:",     14, 7)
         
-        comment_label_frameID_offset,folder_entry_frameID_offset= create_folder_entry(root, frameID_offset,"frameID_offset:",3, 9)
-        comment_label_frameID_range, folder_entry_frameID_range = create_folder_entry(root, frameID_range, "frameID_range:", 4, 9)
-        comment_label_range_sc,      folder_entry_range_sc      = create_folder_entry(root, range_sc,      "range_sc:",      5, 9)
-        comment_label_nx_sc,         folder_entry_nx_sc         = create_folder_entry(root, nx_sc,         "nx_sc:",         6, 9)
-        comment_label_range_iq,      folder_entry_range_iq      = create_folder_entry(root, range_iq,      "range_iq:",      7, 9)
-        comment_label_nx_iq,         folder_entry_nx_iq         = create_folder_entry(root, nx_iq,         "nx_iq:",         8, 9)
+        comment_label_frameID_offset,folder_entry_frameID_offset= create_folder_entry(root, frameID_offset,"frameID_offset:",4, 9)
+        comment_label_frameID_range, folder_entry_frameID_range = create_folder_entry(root, frameID_range, "frameID_range:", 5, 9)
+        comment_label_range_sc,      folder_entry_range_sc      = create_folder_entry(root, range_sc,      "range_sc:",      6, 9)
+        comment_label_nx_sc,         folder_entry_nx_sc         = create_folder_entry(root, nx_sc,         "nx_sc:",         7, 9)
+        comment_label_range_iq,      folder_entry_range_iq      = create_folder_entry(root, range_iq,      "range_iq:",      8, 9)
+        comment_label_nx_iq,         folder_entry_nx_iq         = create_folder_entry(root, nx_iq,         "nx_iq:",         9, 9)
     
         folder_entry_dic = {
                 "synced_files_iq": folder_entry_synced_files_iq,
