@@ -11,10 +11,10 @@ import toml
 import sys
 import shutil
 def generated_file_offline_mode(default_path_synced_files_iq,  default_path_analyzed_files_iq, default_path_synced_files_sc,default_path_analyzed_files_sc):
-        #print(".... generated_file_offline_mode ...")
+        print(".... generated_file_offline_mode ...")
         file_iq = list_files_in_directory(default_path_synced_files_iq,".iq.tdms")
         for file in file_iq:
-                add_file("synced_files_iq.txt",default_path_synced_files_iq, file, 0,"","")
+                add_file(".","synced_files_iq.txt",default_path_synced_files_iq, file, 0,"","")
                 
         # Path to the synced_files_iq.txt file in the current directory
         source_file_iq = "synced_files_iq.txt"
@@ -25,7 +25,7 @@ def generated_file_offline_mode(default_path_synced_files_iq,  default_path_anal
                                 
         file_sc = list_files_in_directory(default_path_synced_files_sc,".sc.tdms")
         for file in file_sc:
-                add_file("synced_files_sc.txt",default_path_synced_files_sc, file, 0,"","")
+                add_file(".","synced_files_sc.txt",default_path_synced_files_sc, file, 0,"","")
         # Path to the synced_files_sc.txt file in the current directory
         source_file_sc = "synced_files_sc.txt"
         # Destination path where the file will be copied to
@@ -104,9 +104,9 @@ def filter_files(files0,end):
             files.append(a)
     return files
             
-def add_file(output_file, directory1, file1_name, elapsed_time, directory2, file2_name):
+def add_file(directory0, output_file, directory1, file1_name, elapsed_time, directory2, file2_name):
         # Prepend directory2 to the output_file path
-        output_path = directory2 + "/" + output_file
+        output_path = directory0 + "/" + output_file
         
         # Create the line to be added to the file
         new_line = directory1 + "/" + file1_name + "  " + str(elapsed_time) + " [second] " + directory2 + "/" + file2_name + "\n"
@@ -172,6 +172,7 @@ def thread_subprocess_iq(thread_file,file_listbox_synced_files_iq,should_stop_an
     start_time = time.time()  # Record the start time
     default_path_synced_files_iq  = folder_entry_dic.get('synced_files_iq', None).get()
     default_path_analyzed_files_iq= folder_entry_dic.get('analyzed_files_iq', None).get()
+    default_path_file_records     = folder_entry_dic.get('default_path_file_records', None).get()
     
     FramesStep   = folder_entry_dic.get("FramesStep", "Default Value if not found").get()
     WeightType   = folder_entry_dic.get("WeightType", "Default Value if not found").get()
@@ -195,7 +196,10 @@ def thread_subprocess_iq(thread_file,file_listbox_synced_files_iq,should_stop_an
         end_time = time.time()  # Record the end time
         elapsed_time = end_time - start_time
         file_root = file+".root"
-        add_file("analyzed_files_iq.txt",default_path_synced_files_iq, file, elapsed_time,default_path_analyzed_files_iq,file_root)
+        add_file(default_path_analyzed_files_iq,"analyzed_files_iq.txt",default_path_synced_files_iq, file, elapsed_time,default_path_analyzed_files_iq,file_root)
+        file_bin = file+".bin_amp"
+        add_file(default_path_file_records,"analyzed_files_iq.txt", default_path_synced_files_iq, file, elapsed_time,default_path_analyzed_files_iq,file_bin)
+        
         
     except subprocess.CalledProcessError:
         print(f"Analyze file failed for: {file}")
@@ -205,10 +209,11 @@ def analyze_files_worker_iq(folder_entry_dic, file_listbox_dic, button_dic, shou
     while not should_stop_analyze[0]: # keep the threading runing until should_stop_analyze[0] = True.
         default_path_synced_files_iq  = folder_entry_dic.get('synced_files_iq', None).get()
         default_path_analyzed_files_iq= folder_entry_dic.get('analyzed_files_iq', None).get()
-
+        
         file_listbox_synced_files_iq  = file_listbox_dic.get('synced_files_iq', None)
         file_listbox_analyzed_files_iq  = file_listbox_dic.get('analyzed_files_iq', None)
         start_button_analysis         = button_dic.get('start_button_analysis', None)
+        
         if default_path_synced_files_iq:
             #print("chenrj ... ",a)
             update_file_list(file_listbox_synced_files_iq,default_path_synced_files_iq,default_path_analyzed_files_iq,"analyzed_files_iq.txt",".iq.tdms")
@@ -255,9 +260,10 @@ def analyze_files_worker_sc(folder_entry_dic, file_listbox_dic, button_dic,shoul
     while not should_stop_analyze[0]: # keep the threading runing until should_stop_analyze[0] = True.
         default_path_synced_files_sc  = folder_entry_dic.get('synced_files_sc', None).get()
         default_path_analyzed_files_sc= folder_entry_dic.get('analyzed_files_sc', None).get()
-                        
+        
         file_listbox_synced_files_sc = file_listbox_dic.get('synced_files_sc', None)
         file_listbox_analyzed_files_sc = file_listbox_dic.get('analyzed_files_sc', None)
+        default_path_file_records     = folder_entry_dic.get('default_path_file_records', None).get()
         
         start_button_analysis        = file_listbox_dic.get('start_button_analysis', None)
         if default_path_synced_files_sc:
@@ -300,16 +306,91 @@ def analyze_files_worker_sc(folder_entry_dic, file_listbox_dic, button_dic,shoul
                         
                         adjust_scroll_position(file, synced_files, file_listbox_synced_files_sc)
                         file_root = file+".root"
-                        #print("chenrj ... add_file")
-                        add_file("analyzed_files_sc.txt",default_path_synced_files_sc, file, elapsed_time,default_path_analyzed_files_sc, file_root)
-                        #update_file_list(file_listbox_synced_files_sc,default_path_synced_files_sc,default_path_analyzed_files_sc, "analyzed_files_sc.txt",".sc.tdms")# Update the file list with the new directory 
+                        add_file(default_path_analyzed_files_sc,"analyzed_files_sc.txt",default_path_synced_files_sc, file, elapsed_time,default_path_analyzed_files_sc, file_root)
+                        add_file(default_path_file_records,"analyzed_files_sc.txt",default_path_synced_files_sc, file, elapsed_time,default_path_analyzed_files_sc, file_root)
+                        
                     except subprocess.CalledProcessError:
                         print(f"Analyze file failed for: {file}")
                         set_listbox_iterm_color(file_listbox_synced_files_sc, file, "red")
             time.sleep(1)
-
+            
+def updateButtonsAndEntries_analyze_data(button_dic, folder_entry_dic, control_flag):
+        for key, button in button_dic.items():
+                if key == "stop_button":
+                        if control_flag:
+                                button.config(state=tk.NORMAL)  # Enable only the stop_button
+                        else:
+                                button.config(state="disabled")  # Enable only the stop_button
+                else:
+                        if key in ["start_button_analysis",
+                                   "browse_button_synced_files_iq",
+                                   "browse_button_analyzed_files_iq",
+                                   "browse_button_synced_files_sc",
+                                   "browse_button_analyzed_files_sc"]:
+                                if control_flag:
+                                        button.config(state="disabled")  # Disable all other buttons
+                                else:
+                                        button.config(state=tk.NORMAL) 
+        for key, entry_widget in folder_entry_dic.items():
+                if key in ["synced_files_iq",
+                           "analyzed_files_iq",
+                           "synced_files_sc",
+                           "analyzed_files_sc",
+                           "num_threads"  ,
+                           "FramesStep"   ,
+                           "WeightType"   ,
+                           "PlotOption"   ,
+                           "FramesPerPlot",
+                           "FFTFreqLow"   ,
+                           "FFTFreqSpan"  ,
+                           "FFTFreqBin"   ,
+                           "FFTNrOfFrames",
+                           "FFTFrameBin"  ,
+                           "WorkMode"       
+                ]:
+                        if control_flag: 
+                                entry_widget.config(state="disabled")
+                        else:
+                                entry_widget.config(state=tk.NORMAL)
+                                
+def updateButtonsAndEntries_online_server(button_dic, folder_entry_dic, control_flag):
+        for key, button in button_dic.items():
+                if key == "stop_button_online_server":
+                        if control_flag:
+                                button.config(state=tk.NORMAL)  # Enable only the stop_button
+                        else:
+                                button.config(state="disabled")  # Enable only the stop_button
+                else:
+                        if key in ["start_button_online_server",
+                                   "browse_button_injection_files",
+                                   "browse_button_default_path_file_records"
+                                   ]:
+                                if control_flag:
+                                        button.config(state="disabled")  # Disable all other buttons
+                                else:
+                                        button.config(state=tk.NORMAL) 
+        for key, entry_widget in folder_entry_dic.items():
+                if key in ["frameID_offset"           ,
+                           "frameID_range"            ,
+                           "range_sc"                 ,
+                           "nx_sc"                    ,
+                           "range_iq"                 ,
+                           "nx_iq"                    ,
+                           "projection_time"          ,
+                           "center_frequency"         ,
+                           "trigger_time_offset"      ,
+                           "enable_time_adjustment"   ,
+                           "accumulation_start"       ,
+                           "default_path_file_records",
+                           "injection_files",
+                ]:
+                        if control_flag: 
+                                entry_widget.config(state="disabled")
+                        else:
+                                entry_widget.config(state=tk.NORMAL)
+                                
 def analyze_data(folder_entry_dic, file_listbox_dic, button_dic, should_stop_analyze, unanalyzed_files_iq, thread_list_iq):
-
+                                
     stop_button = button_dic.get('stop_button', None)
     
     folder_entry_synced_files_iq = folder_entry_dic.get('synced_files_iq', None)
@@ -329,12 +410,13 @@ def analyze_data(folder_entry_dic, file_listbox_dic, button_dic, should_stop_ana
     file_listbox_analyzed_files_iq= file_listbox_dic.get('analyzed_files_iq', None)
     file_listbox_analyzed_files_sc= file_listbox_dic.get('analyzed_files_sc', None)
     file_listbox_injection_files  = file_listbox_dic.get('injection_files', None)
+    
     update_file_list(file_listbox_synced_files_iq,default_path_synced_files_iq, default_path_analyzed_files_iq, "analyzed_files_iq.txt",".iq.tdms")
     update_file_list(file_listbox_synced_files_sc, default_path_synced_files_sc, default_path_analyzed_files_sc,"analyzed_files_sc.txt", ".sc.tdms")# Update the file list with the new directory
     update_file_list(file_listbox_analyzed_files_iq,default_path_analyzed_files_iq,default_path_analyzed_files_iq,"analyzed_files_iq.txt",".iq.tdms.bin_amp")  # Update the file list in file_listbox_analyzed_files_iq with default path
     update_file_list(file_listbox_analyzed_files_sc,default_path_analyzed_files_sc,default_path_analyzed_files_sc,"analyzed_files_sc.txt",".sc.tdms.root")  # Update the file list in file_listbox_analyzed_files_iq with default path
     update_file_list(file_listbox_injection_files,default_path_injection_files,default_path_injection_files,"analyzed_files_iq.txt",".root")  # Update the file list in file_listbox_injection_files with default path
-
+    
     # Check and create directories if they do not exist
     if not os.path.exists(default_path_analyzed_files_iq):
         os.makedirs(default_path_analyzed_files_iq, exist_ok=True)
@@ -344,23 +426,16 @@ def analyze_data(folder_entry_dic, file_listbox_dic, button_dic, should_stop_ana
     if not check_parent_directory(folder_entry_synced_files_iq,folder_entry_analyzed_files_iq,folder_entry_synced_files_sc, folder_entry_analyzed_files_sc):
         return
 
-    WorkMode = folder_entry_dic.get("WorkMode", "Default Value if not found").get()  #
+    WorkMode = int(folder_entry_dic.get("WorkMode", "Default Value if not found").get()) #
+    #print("WorkMode = ",WorkMode)
     if WorkMode == 1:
         generated_file_offline_mode(default_path_synced_files_iq, default_path_analyzed_files_iq,default_path_synced_files_sc,default_path_analyzed_files_sc)
 
     should_stop_analyze[0] = False
     stop_button.config(state=tk.NORMAL) # Enable the stop button later when needed
     
-    for key, button in button_dic.items():
-            if key == "stop_button":
-                    button.config(state=tk.NORMAL)  # Enable only the stop_button
-            else:
-                    if key == "start_button_analysis" or key == "browse_button_synced_files_iq" or key == "browse_button_analyzed_files_iq"  or key == "browse_button_synced_files_sc" or key == "browse_button_analyzed_files_sc":
-                            button.config(state="disabled")  # Disable all other buttons
-                    
-    for key, entry_widget in folder_entry_dic.items():
-            if key == "synced_files_iq" or key == "analyzed_files_iq" or key == "synced_files_sc" or key == "analyzed_files_sc":
-                    entry_widget.config(state="disabled")
+    updateButtonsAndEntries_analyze_data(button_dic, folder_entry_dic,True)
+    
     # Run your analyze_data logic here
     print("Analyzing data...")
 
@@ -432,17 +507,8 @@ def stop_analyze_worker(folder_entry_dic, file_listbox_dic, button_dic, should_s
             # No yellow items, stop blinking
             time.sleep(1)
             stop_button.config(bg=default_bg_color)
-            for key, button in button_dic.items():
-                    if key == "stop_button":
-                            button.config(state="disabled")  # Dusable only the stop_button
-                    else:
-                            if key == "browse_button_synced_files_iq" or key == "browse_button_analyzed_files_iq"  or key == "browse_button_synced_files_sc" or key == "browse_button_analyzed_files_sc":
-                                    button.config(state="normal")  # Enable all other buttons
-            #for entry_widget in folder_entry_dic.values():
-            #        entry_widget.config(state="normal")
-            for key, entry_widget in folder_entry_dic.items():
-                    if key == "synced_files_iq" or key == "analyzed_files_iq" or key == "synced_files_sc" or key == "analyzed_files_sc":
-                            entry_widget.config(state="normal")
+
+            updateButtonsAndEntries_analyze_data(button_dic, folder_entry_dic,False)  
     
             break
     
@@ -509,7 +575,12 @@ def replace_directory_name_if_prefix_found(original_path, new_dir_name):
         new_path = '/'.join(updated_parts)
         return new_path
 
-def start_online_server_worker(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, path_to_analyzed_files_iq, path_to_analyzed_files_sc, default_path_injection_files, frameID_offset, frameID_range, range_sc, nx_sc, range_iq, nx_iq):
+def start_online_server_worker(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, path_to_analyzed_files_iq, path_to_analyzed_files_sc, default_path_injection_files, frameID_offset, frameID_range, range_sc, nx_sc, range_iq, nx_iq, projection_time, center_frequency):
+
+        trigger_time_offset      = folder_entry_dic.get('trigger_time_offset', None).get()
+        enable_time_adjustment      = folder_entry_dic.get('enable_time_adjustment', None).get()
+        accumulation_start  = folder_entry_dic.get('accumulation_start', None).get()
+        default_path_file_records  = folder_entry_dic.get('default_path_file_records', None).get()
         time.sleep(1)
         if not should_stop_online_server[0]:
                 command = f"killall -9 CSR_Online_Server"
@@ -523,7 +594,6 @@ def start_online_server_worker(folder_entry_dic, file_listbox_dic, button_dic, s
                 except subprocess.CalledProcessError:
                         print("stop combine_injection faild!")
                 
-                #command = f"../CSR_Online_Server/CSR_Online_Server ../CSR_Online_Server/config.txt"
                 command = (
                         "../CSR_Online_Server/CSR_Online_Server "
                         f"--path_to_analyzed_files_sc='{path_to_analyzed_files_sc}' "
@@ -534,7 +604,13 @@ def start_online_server_worker(folder_entry_dic, file_listbox_dic, button_dic, s
                         f"--range_sc={range_sc} "
                         f"--nx_sc={nx_sc} "
                         f"--range_iq={range_iq} "
-                        f"--nx_iq={nx_iq}"
+                        f"--nx_iq={nx_iq} "
+                        f"--projection_time={projection_time} "
+                        f"--center_frequency={center_frequency} "
+                        f"--trigger_time_offset={trigger_time_offset} "
+                        f"--enable_time_adjustment={enable_time_adjustment} "
+                        f"--accumulation_start='{accumulation_start}' "
+                        f"--default_path_file_records='{default_path_file_records}'"
                 )
                 print(" command : ",command)
                 try:
@@ -546,13 +622,12 @@ def start_online_server_worker(folder_entry_dic, file_listbox_dic, button_dic, s
 def start_generate_full_spectrum_worker(folder_entry_dic, file_listbox_dic, button_dic,should_stop_online_server, default_path_injection_files, frameID_offset, frameID_range):
         time.sleep(1)
         while not should_stop_online_server[0]: 
-                #command = f"combine_injection get_full_spec {default_path_injection_files}/injection_list.txt  {default_path_injection_files} 10"
                 command = (
                         f"combine_injection get_full_spec {default_path_injection_files}/injection_list.txt "
                         f"{default_path_injection_files} 10 {frameID_offset} {frameID_range}"
                 )
                 try:
-                        print("combine_injection get_full_spec ../data/injection/injection_list.txt /lustre/astrum/experiment_data/2024-05_E018/OnlineDataAnalysisSystem/data 20") 
+                        print(command) 
                         subprocess.run(command, shell=True, check=True)
                 
                 except subprocess.CalledProcessError:
@@ -569,20 +644,24 @@ def start_online_server(folder_entry_dic, file_listbox_dic, button_dic,  should_
     stop_button_online_server     = button_dic.get('stop_button_online_server', None)
     folder_entry_analyzed_files_iq= folder_entry_dic.get('analyzed_files_iq', None)
     folder_entry_analyzed_files_sc= folder_entry_dic.get('analyzed_files_sc', None)
-    #path_to_analyzed_files_iq = folder_entry_dic.get('folder_entry_analyzed_files_iq', None).get()
-    #path_to_analyzed_files_sc = folder_entry_dic.get('folder_entry_analyzed_files_sc', None).get()
     default_path_injection_files= folder_entry_dic.get('injection_files', None).get()
+    
     frameID_offset= folder_entry_dic.get('frameID_offset', None).get()
     frameID_range = folder_entry_dic.get('frameID_range', None).get()
     range_sc      = folder_entry_dic.get('range_sc', None).get()
     nx_sc         = folder_entry_dic.get('nx_sc', None).get()
     range_iq      = folder_entry_dic.get('range_iq', None).get()
     nx_iq         = folder_entry_dic.get('nx_iq', None).get()
+    projection_time         = folder_entry_dic.get('projection_time', None).get()
+    center_frequency        = folder_entry_dic.get('center_frequency', None).get()
+    trigger_time_offset         = folder_entry_dic.get('trigger_time_offset', None).get()
+    enable_time_adjustment         = folder_entry_dic.get('enable_time_adjustment', None).get()
+    accumulation_start         = folder_entry_dic.get('accumulation_start', None).get()
     
     should_stop_online_server[0] = False
-    start_button_online_server.config(state="disabled")  # Disable the start button during syncing
-    stop_button_online_server.config(state=tk.NORMAL) # Enable the stop button later when needed
 
+    updateButtonsAndEntries_online_server(button_dic, folder_entry_dic, True)
+    
     # Remove CSR_Online_Server_status.txt if it exists
     try:
             os.remove("CSR_Online_Server_status.txt")
@@ -599,7 +678,7 @@ def start_online_server(folder_entry_dic, file_listbox_dic, button_dic,  should_
     path_to_analyzed_files_sc   = replace_directory_name_if_prefix_found(path_to_analyzed_files_sc,   new_sc_dir_name)
     default_path_injection_files= replace_directory_name_if_prefix_found(default_path_injection_files,new_iq_dir_name)
     
-    thread_start_online_server = threading.Thread(target=start_online_server_worker,args=(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server,path_to_analyzed_files_iq, path_to_analyzed_files_sc, default_path_injection_files,frameID_offset, frameID_range, range_sc, nx_sc, range_iq, nx_iq))
+    thread_start_online_server = threading.Thread(target=start_online_server_worker,args=(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server,path_to_analyzed_files_iq, path_to_analyzed_files_sc, default_path_injection_files,frameID_offset, frameID_range, range_sc, nx_sc, range_iq, nx_iq, projection_time, center_frequency))
     thread_start_online_server.start()
     
     thread_start_generate_full_spectrum = threading.Thread(target=start_generate_full_spectrum_worker,args=(folder_entry_dic, file_listbox_dic, button_dic,should_stop_online_server, default_path_injection_files, frameID_offset, frameID_range))
@@ -608,26 +687,10 @@ def start_online_server(folder_entry_dic, file_listbox_dic, button_dic,  should_
     
     should_stop_update_online_server[0] = True
     update_online_server(stop_button_online_server, should_stop_update_online_server)    
-                        
+    
 def update_online_server_worker(should_stop_update_online_server):
-    while not should_stop_update_online_server[0]:
-        #print("update_online_server_worker")
-        # Find processes with the name "CSR_Online_Serv"
-        online_server_procs = [p for p in psutil.process_iter(attrs=['name']) if p.info['name'] == 'CSR_Online_Server']
-        if online_server_procs:
-        # Get the PID of the first matching process
-            online_server_pid = online_server_procs[0].pid
-            print(f"online_server pid: {online_server_pid}")
-            # Send signal 10 (SIGUSR1) to the process; you can replace it with the desired signal
-            try:
-                    os.kill(online_server_pid, 10)
-                    print(f"Sent signal 10 to online_server (PID {online_server_pid})")
-            except ProcessLookupError:
-                    print("Process not found")
-        time.sleep(10)  # Wait for 60 seconds after each operation
-        
-def update_online_server(stop_button_online_server, should_stop_update_online_server):
         while should_stop_update_online_server[0]:
+                time.sleep(10)
                 try:
                         with open("CSR_Online_Server_status.txt", "r") as file:
                                 content = file.read().strip()
@@ -635,14 +698,27 @@ def update_online_server(stop_button_online_server, should_stop_update_online_se
                         # Check if the content is not empty
                         if content and "Return value: 1" in content:
                                 should_stop_update_online_server[0] = False
-                                thread_update_online_server = threading.Thread(target=update_online_server_worker, args=(should_stop_update_online_server,))
-                                thread_update_online_server.start()
                                 break  # Exit the loop if actions are performed
-                        
                 except Exception as e:
                         print(f"Online server is not ready. Please wait.")
-                        
-                time.sleep(10)
+        
+        while not should_stop_update_online_server[0]:
+                online_server_procs = [p for p in psutil.process_iter(attrs=['name']) if p.info['name'] == 'CSR_Online_Server']
+                if online_server_procs:
+                        # Get the PID of the first matching process
+                        online_server_pid = online_server_procs[0].pid
+                        print(f"online_server pid: {online_server_pid}")
+                        # Send signal 10 (SIGUSR1) to the process; you can replace it with the desired signal
+                try:
+                        os.kill(online_server_pid, 10)
+                        print(f"Sent signal 10 to online_server (PID {online_server_pid})")
+                except ProcessLookupError:
+                        print("Process not found")
+                time.sleep(10)  # Wait for 60 seconds after each operation
+        
+def update_online_server(stop_button_online_server, should_stop_update_online_server):
+        thread_update_online_server = threading.Thread(target=update_online_server_worker, args=(should_stop_update_online_server,))
+        thread_update_online_server.start()
     
     
 def stop_online_server(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, should_stop_update_online_server):
@@ -652,8 +728,7 @@ def stop_online_server(folder_entry_dic, file_listbox_dic, button_dic, should_st
         should_stop_update_online_server[0] = True
         #print(" stop_online_server")
         if should_stop_online_server[0]:
-                start_button_online_server.config(state=tk.NORMAL)  # Disable the start button during syncing
-                stop_button_online_server.config(state="disabled") # Enable the stop button later when needed
+                updateButtonsAndEntries_online_server(button_dic, folder_entry_dic, False) 
         
                 command = f"killall -9 CSR_Online_Server"
                 try:
@@ -745,50 +820,8 @@ def update_file_list(file_listbox, default_path_synced_files,default_path_analyz
                 file_fullpath = os.path.join(default_path_synced_files, file)
                 if file_fullpath in analyzed_files:
                         set_listbox_iterm_color(file_listbox, file, "green")
-        #sort_listbox(file_listbox)
-        # Restore the previous scroll position
-        #file_listbox.yview_moveto(scroll_position)
         file_listbox.yview(tk.END)
         
-#def update_file_list(file_listbox, default_path_synced_files, default_path_analyzed_files, analyzed_files_name="analyzed_files_iq.txt", end=".iq.tdms"):
-#        # Retrieve the current items in the listbox
-#        existing_items = list(file_listbox.get(0, tk.END))
-#        
-#        # Create a dictionary to store the color of each item
-#        existing_colors = {item: get_listbox_item_color(file_listbox, i) for i, item in enumerate(existing_items)}
-#        
-#        # List files in the synced_files with the specified file extension
-#        files_in_synced_files = list_files_in_directory(default_path_synced_files, end)
-#        
-#        # Save the current scroll position to restore later
-#        scroll_position = file_listbox.yview()[0]
-#        
-#        # Identify new files that are not already in the listbox and existing ones
-#        new_files = [file for file in files_in_synced_files if file not in existing_items]
-#        updated_files = existing_items + new_files
-#        
-#        # Clear the Listbox before re-inserting sorted items
-#        file_listbox.delete(0, tk.END)
-#        
-#        # Sort all files (new and existing) alphabetically
-#        updated_files.sort()
-#        
-#        # Insert sorted files back into the Listbox and reapply color coding
-#        analyzed_files_path = os.path.join(default_path_analyzed_files, analyzed_files_name)
-#        analyzed_files = get_files(analyzed_files_path)
-#        for file in updated_files:
-#                file_listbox.insert(tk.END, file)
-#                file_fullpath = os.path.join(default_path_synced_files, file)
-#                # Apply color coding based on previous state or if it's analyzed
-#                if file_fullpath in analyzed_files:
-#                        index = file_listbox.size() - 1
-#                        set_listbox_iterm_color(file_listbox, index, "green")
-#                elif file in existing_colors:
-#                        index = file_listbox.size() - 1
-#                        set_listbox_iterm_color(file_listbox, index, existing_colors[file])
-#                
-#        # Restore the previous scroll position
-#        file_listbox.yview_moveto(scroll_position)
 
 def read_paths_file(default_path_synced_files_iq, default_path_analyzed_files_iq, paths="paths_iq.txt"):
     try:
@@ -981,6 +1014,12 @@ def main():
         nx_sc =config["nx_sc"]
         range_iq =config["range_iq"]
         nx_iq =config["nx_iq"]
+        projection_time =config["projection_time"]
+        center_frequency =config["center_frequency"]
+        trigger_time_offset =config["trigger_time_offset"]
+        enable_time_adjustment =config["enable_time_adjustment"]
+        accumulation_start =config["accumulation_start"]
+        default_path_file_records =config["default_path_file_records"]
 
         # Create a menu bar
         menubar = tk.Menu(root)
@@ -1035,16 +1074,24 @@ def main():
         folder_entry_injection_files = tk.Entry(root,width=100, justify='right')
         folder_entry_injection_files.grid(row=4, column=1, columnspan=4,padx=10, pady=10, sticky="w")  # Left-aligned
         folder_entry_injection_files.insert(0, default_path_injection_files)  # Insert the default path
+
+        ## Create a Label for default_path_file_records
+        comment_label_default_path_file_records = tk.Label(root, text="FILE_RECORDS:")
+        comment_label_default_path_file_records.grid(row=5, column=0, padx=10, pady=10, sticky="w")  # Left-aligned
+        # Create an Entry widget for default_path_file_records
+        folder_entry_default_path_file_records = tk.Entry(root,width=100, justify='right')
+        folder_entry_default_path_file_records.grid(row=5, column=1, columnspan=4,padx=10, pady=10, sticky="w")  # Left-aligned
+        folder_entry_default_path_file_records.insert(0, default_path_file_records)  # Insert the default path
+
+        file_listbox_synced_files_iq,file_listbox_synced_files_iq_scrollbar = create_listbox_with_scrollbar(root, width=15, height=25, grid_row=6, grid_column=0)
+
+        file_listbox_analyzed_files_iq,file_listbox_analyzed_files_iq_scrollbar = create_listbox_with_scrollbar(root, width=25, height=25, grid_row=6, grid_column=1)
         
-        file_listbox_synced_files_iq,file_listbox_synced_files_iq_scrollbar = create_listbox_with_scrollbar(root, width=15, height=25, grid_row=5, grid_column=0)
+        file_listbox_synced_files_sc,file_listbox_synced_files_sc_scrollbar = create_listbox_with_scrollbar(root, width=15, height=25, grid_row=6, grid_column=2)
 
-        file_listbox_analyzed_files_iq,file_listbox_analyzed_files_iq_scrollbar = create_listbox_with_scrollbar(root, width=25, height=25, grid_row=5, grid_column=1)
-        
-        file_listbox_synced_files_sc,file_listbox_synced_files_sc_scrollbar = create_listbox_with_scrollbar(root, width=15, height=25, grid_row=5, grid_column=2)
+        file_listbox_analyzed_files_sc,file_listbox_analyzed_files_sc_scrollbar = create_listbox_with_scrollbar(root, width=25, height=25, grid_row=6, grid_column=3)
 
-        file_listbox_analyzed_files_sc,file_listbox_analyzed_files_sc_scrollbar = create_listbox_with_scrollbar(root, width=25, height=25, grid_row=5, grid_column=3)
-
-        file_listbox_injection_files,file_listbox_injection_files_scrollbar = create_listbox_with_scrollbar(root, width=35, height=25, grid_row=5, grid_column=4)
+        file_listbox_injection_files,file_listbox_injection_files_scrollbar = create_listbox_with_scrollbar(root, width=35, height=25, grid_row=6, grid_column=4)
         
         update_file_list(file_listbox_synced_files_iq,default_path_synced_files_iq,default_path_analyzed_files_iq,"analyzed_files_iq.txt",".iq.tdms")  # Update the file list in file_listbox_synced_files_iq with default path
         update_file_list(file_listbox_synced_files_sc,default_path_synced_files_sc,default_path_analyzed_files_sc,"analyzed_files_sc.txt",".sc.tdms")  # Update the file list in file_listbox_synced_files_iq with default path
@@ -1071,6 +1118,10 @@ def main():
         # Create a "Browse" button for folder selection
         browse_button_injection_files = tk.Button(root, text="Browse", command=lambda: browse_folder_and_update_list_filebox(folder_entry_injection_files,default_path_injection_files,default_path_injection_files,file_listbox_injection_files,"analyzed_files_iq.txt",".root"))
         browse_button_injection_files.grid(row=4, column=4, padx=0, pady=10, sticky="e")  # Left-aligned
+
+        # Create a "Browse" button for folder selection
+        browse_button_default_path_file_records = tk.Button(root, text="Browse", command=lambda: browse_folder_and_update_list_filebox(folder_entry_default_path_file_records,default_path_file_records,default_path_file_records,file_listbox_default_path_file_records,"analyzed_files_iq.txt",".root"))
+        browse_button_default_path_file_records.grid(row=5, column=4, padx=0, pady=10, sticky="e")  # Left-aligned
     
         
         ### Create the "Start" button
@@ -1079,18 +1130,18 @@ def main():
         
         object_list=[]
         
-        start_button_analysis = ttk.Button(root, text="Start analysis", command=lambda:analyze_data(folder_entry_dic,file_listbox_dic, button_dic, should_stop_analyze, unanalyzed_files_iq,thread_list_iq))
+        start_button_analysis = ttk.Button(root, text="Start FFT", command=lambda:analyze_data(folder_entry_dic,file_listbox_dic, button_dic, should_stop_analyze, unanalyzed_files_iq,thread_list_iq))
         start_button_analysis.configure(style="TButton")
         start_button_analysis.grid(row=0, column=7, padx=5, pady=10, sticky="w", columnspan=2)
                 
         ### Create the "Stop" button
-        stop_button = tk.Button(root, text="Stop analysis", command=lambda:stop_analyze(folder_entry_dic, file_listbox_dic, button_dic, should_stop_analyze, unanalyzed_files_iq, thread_list_iq))
+        stop_button = tk.Button(root, text="Stop FFT", command=lambda:stop_analyze(folder_entry_dic, file_listbox_dic, button_dic, should_stop_analyze, unanalyzed_files_iq, thread_list_iq))
         stop_button.grid(row=1, column=7, padx=5, pady=10, sticky="w", columnspan=2)  # Left-aligned
     
-        start_button_online_server = tk.Button(root, text="Start online server", command=lambda:start_online_server(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, should_stop_update_online_server, path_to_analyzed_files_iq, path_to_analyzed_files_sc))
+        start_button_online_server = tk.Button(root, text="Start injection spec.", command=lambda:start_online_server(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, should_stop_update_online_server, path_to_analyzed_files_iq, path_to_analyzed_files_sc))
         start_button_online_server.grid(row=0, column=9, padx=5, pady=10, sticky="w", columnspan=2)  # Left-aligned
                        
-        stop_button_online_server = tk.Button(root, text="Stop online server", command=lambda:stop_online_server(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, should_stop_update_online_server))
+        stop_button_online_server = tk.Button(root, text="Stop injection spec.", command=lambda:stop_online_server(folder_entry_dic, file_listbox_dic, button_dic, should_stop_online_server, should_stop_update_online_server))
         stop_button_online_server.grid(row=1, column=9, padx=5, pady=10, sticky="w", columnspan=2)  # Left-aligned
         
         start_button_roody = tk.Button(root, text="Start roody", command=lambda:start_roody(start_button_roody,stop_button_roody,should_stop_roody))
@@ -1101,11 +1152,11 @@ def main():
     
         ## Create the "Reanalyze" button iq
         reanalyze_button_iq = tk.Button(root, text="Re-analyze(IQ)", command=lambda:reanalyze_sync_iq(file_listbox_synced_files_iq,default_path_synced_files_iq,file_listbox_synced_files_sc,default_path_synced_files_sc))
-        reanalyze_button_iq.grid(row=14, column=0, padx=5, pady=10, sticky="w")  # Left-aligned
+        reanalyze_button_iq.grid(row=15, column=0, padx=5, pady=10, sticky="w")  # Left-aligned
         
         ## Create the "Reanalyze" button sc
         reanalyze_button_sc = tk.Button(root, text="Re-analyze(SC)", command=lambda:reanalyze_sync_sc(file_listbox_synced_files_iq,default_path_synced_files_iq,file_listbox_synced_files_sc,default_path_synced_files_sc))
-        reanalyze_button_sc.grid(row=14, column=2, padx=5, pady=10, sticky="w")  # Left-aligned
+        reanalyze_button_sc.grid(row=15, column=2, padx=5, pady=10, sticky="w")  # Left-aligned
         
         comment_label_num_threads,  folder_entry_num_threads  = create_folder_entry(root, num_threads,  "NUM_THREADS:",   4, 7)
         comment_label_FramesStep,   folder_entry_FramesStep   = create_folder_entry(root, FramesStep,   "FramesStep:",    5, 7)
@@ -1125,7 +1176,14 @@ def main():
         comment_label_nx_sc,         folder_entry_nx_sc         = create_folder_entry(root, nx_sc,         "nx_sc:",         7, 9)
         comment_label_range_iq,      folder_entry_range_iq      = create_folder_entry(root, range_iq,      "range_iq:",      8, 9)
         comment_label_nx_iq,         folder_entry_nx_iq         = create_folder_entry(root, nx_iq,         "nx_iq:",         9, 9)
-    
+        comment_label_projection_time,folder_entry_projection_time = create_folder_entry(root, projection_time,         "projection_time:",        10, 9)
+        comment_label_center_frequency,folder_entry_center_frequency = create_folder_entry(root, center_frequency,         "center_frequency:",        11, 9)
+        comment_label_trigger_time_offset,folder_entry_trigger_time_offset = create_folder_entry(root, trigger_time_offset,         "trigger_time_offset:",        12, 9)
+        comment_label_enable_time_adjustment,folder_entry_enable_time_adjustment = create_folder_entry(root, enable_time_adjustment,         "enable_time_adjustment:",        13, 9)
+        comment_label_accumulation_start,folder_entry_accumulation_start = create_folder_entry(root, accumulation_start,         "accumulation_start:",        14, 9)
+        #comment_label_default_path_file_records,folder_entry_default_path_file_records = create_folder_entry(root, default_path_file_records,         "default_path_file_records:",        14, 9)
+
+        
         folder_entry_dic = {
                 "synced_files_iq": folder_entry_synced_files_iq,
                 "analyzed_files_iq": folder_entry_analyzed_files_iq,
@@ -1148,7 +1206,13 @@ def main():
                 "range_sc": folder_entry_range_sc,
                 "nx_sc": folder_entry_nx_sc,
                 "range_iq": folder_entry_range_iq,
-                "nx_iq": folder_entry_nx_iq
+                "nx_iq": folder_entry_nx_iq,
+                "projection_time": folder_entry_projection_time,
+                "center_frequency": folder_entry_center_frequency,
+                "trigger_time_offset": folder_entry_trigger_time_offset,
+                "enable_time_adjustment": folder_entry_enable_time_adjustment,
+                "accumulation_start": folder_entry_accumulation_start,
+                "default_path_file_records": folder_entry_default_path_file_records
         }
         
         file_listbox_dic = {
@@ -1164,6 +1228,7 @@ def main():
                 "browse_button_synced_files_sc": browse_button_synced_files_sc,
                 "browse_button_analyzed_files_sc": browse_button_analyzed_files_sc,
                 "browse_button_injection_files": browse_button_injection_files,
+                "browse_button_default_path_file_records":browse_button_default_path_file_records,
                 "start_button_analysis": start_button_analysis,
                 "stop_button": stop_button,
                 "start_button_online_server": start_button_online_server,
